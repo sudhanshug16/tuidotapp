@@ -16,4 +16,29 @@ struct TerminalKeyMappingTests {
         #expect(translated.contains(.shift))
         #expect(translated.contains(.capsLock))
     }
+
+    @Test("Copy and Paste stay as Command by default")
+    @MainActor
+    func defaultExclusions() {
+        let excluded = TuiTerminalView.excludedCommandKeys(from: " C, v ")
+
+        #expect(!TuiTerminalView.shouldMapCommandToControl(
+            mapEnabled: true,
+            modifiers: [.command],
+            key: "c",
+            excludedKeys: excluded
+        ))
+        #expect(!TuiTerminalView.shouldMapCommandToControl(
+            mapEnabled: true,
+            modifiers: [.command],
+            key: "V",
+            excludedKeys: excluded
+        ))
+        #expect(TuiTerminalView.shouldMapCommandToControl(
+            mapEnabled: true,
+            modifiers: [.command],
+            key: "x",
+            excludedKeys: excluded
+        ))
+    }
 }

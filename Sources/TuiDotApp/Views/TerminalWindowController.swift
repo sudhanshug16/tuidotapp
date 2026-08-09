@@ -76,6 +76,9 @@ final class TerminalHostViewController: NSViewController {
     override func viewDidLoad() {
         super.viewDidLoad()
         terminalView.mapCommandToControl = profile.mapCommandToControl
+        terminalView.commandToControlExcludedKeys = TuiTerminalView.excludedCommandKeys(
+            from: profile.commandToControlExclusions
+        )
         terminalView.delegate = self
         terminalView.controller = controller
         terminalView.configuration = TerminalSurfaceOptions(

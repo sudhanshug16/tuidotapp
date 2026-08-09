@@ -27,7 +27,18 @@ struct ProfileEditorView: View {
                     .font(.system(.body, design: .monospaced))
                 Toggle("Send Command shortcuts as Control", isOn: $draft.mapCommandToControl)
                     .toggleStyle(.checkbox)
-                Text("For example, ⌘C reaches the TUI as Control-C. ⌘Q still quits the Mac app.")
+                if draft.mapCommandToControl {
+                    TextField(
+                        "Keep as Command",
+                        text: $draft.commandToControlExclusions,
+                        prompt: Text("c, v")
+                    )
+                    .font(.system(.body, design: .monospaced))
+                    Text("Comma-separated keys that keep normal Mac behavior. C and V preserve Copy and Paste; ⌘Q always quits the app.")
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                }
+                Text("Other Command shortcuts reach the TUI as their Control equivalents.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

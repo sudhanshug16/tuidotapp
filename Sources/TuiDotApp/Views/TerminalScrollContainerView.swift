@@ -10,6 +10,7 @@ import GhosttyTerminal
 @MainActor
 final class TuiTerminalView: TerminalView {
     var mapCommandToControl = false
+    var commandToControlExcludedKeys: Set<String> = ["c", "v"]
 
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let shortcutModifiers = event.modifierFlags.intersection([
@@ -26,9 +27,8 @@ final class TuiTerminalView: TerminalView {
             return true
         }
 
-        if mapCommandToControl,
-           event.type == .keyDown,
-           event.modifierFlags.contains(.command),
+        if event.type == .keyDown,
+           shouldMapCommandToControl(event),
            let translatedEvent = replacingCommandWithControl(in: event)
         {
             super.keyDown(with: translatedEvent)
@@ -39,8 +39,7 @@ final class TuiTerminalView: TerminalView {
     }
 
     override func keyDown(with event: NSEvent) {
-        guard mapCommandToControl,
-              event.modifierFlags.contains(.command),
+        guard shouldMapCommandToControl(event),
               let translatedEvent = replacingCommandWithControl(in: event)
         else {
             super.keyDown(with: event)
@@ -50,8 +49,7 @@ final class TuiTerminalView: TerminalView {
     }
 
     override func keyUp(with event: NSEvent) {
-        guard mapCommandToControl,
-              event.modifierFlags.contains(.command),
+        guard shouldMapCommandToControl(event),
               let translatedEvent = replacingCommandWithControl(in: event)
         else {
             super.keyUp(with: event)
@@ -82,6 +80,33 @@ final class TuiTerminalView: TerminalView {
         translated.remove(.command)
         translated.insert(.control)
         return translated
+    }
+
+    private func shouldMapCommandToControl(_ event: NSEvent) -> Bool {
+        Self.shouldMapCommandToControl(
+            mapEnabled: mapCommandToControl,
+            modifiers: event.modifierFlags,
+            key: event.charactersIgnoringModifiers,
+            excludedKeys: commandToControlExcludedKeys
+        )
+    }
+
+    static func shouldMapCommandToControl(
+        mapEnabled: Bool,
+        modifiers: NSEvent.ModifierFlags,
+        key: String?,
+        excludedKeys: Set<String>
+    ) -> Bool {
+        guard mapEnabled, modifiers.contains(.command) else { return false }
+        guard let key else { return true }
+        return !excludedKeys.contains(key.lowercased())
+    }
+
+    static func excludedCommandKeys(from value: String) -> Set<String> {
+        Set(value
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty })
     }
 
 

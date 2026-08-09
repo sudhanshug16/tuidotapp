@@ -26,6 +26,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
     var darkThemeName: String
     var ghosttyConfig: String
     var mapCommandToControl: Bool
+    var commandToControlExclusions: String
     var iconPath: String?
     var createdAt: Date
     var updatedAt: Date
@@ -42,6 +43,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         darkThemeName: String = "Catppuccin Mocha",
         ghosttyConfig: String = "font-size = 14\nwindow-padding-x = 8\nwindow-padding-y = 8",
         mapCommandToControl: Bool = false,
+        commandToControlExclusions: String = "c, v",
         iconPath: String? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
@@ -57,6 +59,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         self.darkThemeName = darkThemeName
         self.ghosttyConfig = ghosttyConfig
         self.mapCommandToControl = mapCommandToControl
+        self.commandToControlExclusions = commandToControlExclusions
         self.iconPath = iconPath
         self.createdAt = createdAt
         self.updatedAt = updatedAt
@@ -79,6 +82,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         case darkThemeName
         case ghosttyConfig
         case mapCommandToControl
+        case commandToControlExclusions
         case iconPath
         case createdAt
         case updatedAt
@@ -100,6 +104,10 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
             Bool.self,
             forKey: .mapCommandToControl
         ) ?? false
+        commandToControlExclusions = try container.decodeIfPresent(
+            String.self,
+            forKey: .commandToControlExclusions
+        ) ?? "c, v"
         iconPath = try container.decodeIfPresent(String.self, forKey: .iconPath)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)

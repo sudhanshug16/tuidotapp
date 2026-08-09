@@ -17,6 +17,7 @@ struct ProfileStoreTests {
         #expect(loaded.profiles.count == 1)
         #expect(loaded.profiles[0].command == "herdr")
         #expect(!loaded.profiles[0].mapCommandToControl)
+        #expect(loaded.profiles[0].commandToControlExclusions == "c, v")
 
         let persisted = try String(contentsOf: fileURL, encoding: .utf8)
         #expect(!persisted.contains("Mach-O"))
@@ -31,6 +32,7 @@ struct ProfileStoreTests {
             JSONSerialization.jsonObject(with: encoder.encode(profile)) as? [String: Any]
         )
         object.removeValue(forKey: "mapCommandToControl")
+        object.removeValue(forKey: "commandToControlExclusions")
         let data = try JSONSerialization.data(withJSONObject: object)
 
         let decoder = JSONDecoder()
@@ -38,5 +40,6 @@ struct ProfileStoreTests {
         let decoded = try decoder.decode(TuiProfile.self, from: data)
 
         #expect(!decoded.mapCommandToControl)
+        #expect(decoded.commandToControlExclusions == "c, v")
     }
 }
