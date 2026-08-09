@@ -25,6 +25,11 @@ struct ProfileEditorView: View {
                     .font(.system(.body, design: .monospaced))
                 TextField("Working directory", text: $draft.workingDirectory)
                     .font(.system(.body, design: .monospaced))
+                Toggle("Send Command shortcuts as Control", isOn: $draft.mapCommandToControl)
+                    .toggleStyle(.checkbox)
+                Text("For example, ⌘C reaches the TUI as Control-C. ⌘Q still quits the Mac app.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             if draft.kind == .ssh {

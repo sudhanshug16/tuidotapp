@@ -9,6 +9,8 @@ import GhosttyTerminal
 /// screen fallback (arrow-key history) instead of TUI mouse reporting.
 @MainActor
 final class TuiTerminalView: TerminalView {
+    var mapCommandToControl = false
+
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let shortcutModifiers = event.modifierFlags.intersection([
             .command,
@@ -24,8 +26,64 @@ final class TuiTerminalView: TerminalView {
             return true
         }
 
+        if mapCommandToControl,
+           event.type == .keyDown,
+           event.modifierFlags.contains(.command),
+           let translatedEvent = replacingCommandWithControl(in: event)
+        {
+            super.keyDown(with: translatedEvent)
+            return true
+        }
+
         return super.performKeyEquivalent(with: event)
     }
+
+    override func keyDown(with event: NSEvent) {
+        guard mapCommandToControl,
+              event.modifierFlags.contains(.command),
+              let translatedEvent = replacingCommandWithControl(in: event)
+        else {
+            super.keyDown(with: event)
+            return
+        }
+        super.keyDown(with: translatedEvent)
+    }
+
+    override func keyUp(with event: NSEvent) {
+        guard mapCommandToControl,
+              event.modifierFlags.contains(.command),
+              let translatedEvent = replacingCommandWithControl(in: event)
+        else {
+            super.keyUp(with: event)
+            return
+        }
+        super.keyUp(with: translatedEvent)
+    }
+
+    private func replacingCommandWithControl(in event: NSEvent) -> NSEvent? {
+        return NSEvent.keyEvent(
+            with: event.type,
+            location: event.locationInWindow,
+            modifierFlags: Self.replacingCommandWithControl(in: event.modifierFlags),
+            timestamp: event.timestamp,
+            windowNumber: event.windowNumber,
+            context: nil,
+            characters: event.characters ?? "",
+            charactersIgnoringModifiers: event.charactersIgnoringModifiers ?? "",
+            isARepeat: event.isARepeat,
+            keyCode: event.keyCode
+        )
+    }
+
+    static func replacingCommandWithControl(
+        in modifiers: NSEvent.ModifierFlags
+    ) -> NSEvent.ModifierFlags {
+        var translated = modifiers
+        translated.remove(.command)
+        translated.insert(.control)
+        return translated
+    }
+
 
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)

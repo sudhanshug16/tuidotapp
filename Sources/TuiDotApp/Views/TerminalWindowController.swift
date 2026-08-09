@@ -75,6 +75,7 @@ final class TerminalHostViewController: NSViewController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        terminalView.mapCommandToControl = profile.mapCommandToControl
         terminalView.delegate = self
         terminalView.controller = controller
         terminalView.configuration = TerminalSurfaceOptions(
