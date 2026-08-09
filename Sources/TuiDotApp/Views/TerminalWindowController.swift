@@ -44,7 +44,8 @@ final class TerminalWindowController: NSWindowController, NSWindowDelegate {
 final class TerminalHostViewController: NSViewController {
     private let profile: TuiProfile
     private let launchInput: LaunchInput
-    private let terminalView = TerminalView(frame: .zero)
+    private let terminalView = TuiTerminalView(frame: .zero)
+    private lazy var terminalContainer = TerminalScrollContainerView(terminalView: terminalView)
     private let controller: TerminalController
     private var didConsumeLaunchInput = false
 
@@ -80,15 +81,15 @@ final class TerminalHostViewController: NSViewController {
             backend: .exec,
             workingDirectory: expandedWorkingDirectory(profile.workingDirectory)
         )
-        terminalView.translatesAutoresizingMaskIntoConstraints = false
+        terminalContainer.translatesAutoresizingMaskIntoConstraints = false
         terminalView.setAccessibilityElement(true)
         terminalView.setAccessibilityLabel("\(profile.name) terminal")
-        view.addSubview(terminalView)
+        view.addSubview(terminalContainer)
         NSLayoutConstraint.activate([
-            terminalView.topAnchor.constraint(equalTo: view.topAnchor),
-            terminalView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
-            terminalView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            terminalView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            terminalContainer.topAnchor.constraint(equalTo: view.topAnchor),
+            terminalContainer.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            terminalContainer.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            terminalContainer.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
     }
 
@@ -111,12 +112,18 @@ final class TerminalHostViewController: NSViewController {
 
 extension TerminalHostViewController:
     TerminalSurfaceCloseDelegate,
-    TerminalSurfaceResizeDelegate
+    TerminalSurfaceGridResizeDelegate,
+    TerminalSurfaceScrollbarDelegate
 {
-    func terminalDidResize(columns _: Int, rows _: Int) {
+    func terminalDidResize(_ size: TerminalGridMetrics) {
+        terminalContainer.updateGrid(size)
         guard !didConsumeLaunchInput else { return }
         didConsumeLaunchInput = true
         LaunchInputStore.remove(launchInput)
+    }
+
+    func terminalDidUpdateScrollbar(_ scrollbar: TerminalScrollbar) {
+        terminalContainer.updateScrollbar(scrollbar)
     }
 
     func terminalDidClose(processAlive _: Bool) {

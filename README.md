@@ -7,7 +7,8 @@ TuiDotApp launches your real login shell inside an embedded Ghostty terminal and
 ## Current capabilities
 
 - Native macOS profile manager and dedicated terminal windows
-- Ghostty rendering, input, selection, clipboard, fonts, and configuration
+- Ghostty rendering, mouse reporting, selection, clipboard, fonts, and configuration
+- Native macOS scrollbars with interactive scrollback navigation
 - 485 bundled light/dark themes with separate system-appearance choices
 - Unfiltered Ghostty config passthrough for options not represented in the UI
 - Local commands resolved by the user's login shell
