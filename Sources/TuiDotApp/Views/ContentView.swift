@@ -37,6 +37,7 @@ struct ContentView: View {
         }
         .task {
             store.addDefaultProfileIfEmpty()
+            store.updateOutdatedExportedAppsIfNeeded()
         }
         .confirmationDialog(
             "Reset the profile library?",
@@ -57,6 +58,17 @@ struct ContentView: View {
             Button("OK", role: .cancel) {}
         } message: {
             Text(recoveryMessage ?? "")
+        }
+        .alert(
+            store.exportedAppsUpdateReport?.title ?? "Exported apps updated",
+            isPresented: Binding(
+                get: { store.exportedAppsUpdateReport != nil },
+                set: { if !$0 { store.dismissExportedAppsUpdateReport() } }
+            )
+        ) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(store.exportedAppsUpdateReport?.message ?? "")
         }
     }
 

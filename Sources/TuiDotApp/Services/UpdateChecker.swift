@@ -1,5 +1,5 @@
-import AppKit
 import Foundation
+import Sparkle
 
 struct AppVersion: Comparable, Equatable, Sendable {
     let components: [Int]
@@ -29,75 +29,27 @@ struct AppVersion: Comparable, Equatable, Sendable {
 }
 
 @MainActor
-enum UpdateChecker {
-    private struct GitHubRelease: Decodable, Sendable {
-        let tagName: String
-        let htmlURL: URL
+final class UpdateChecker {
+    private(set) var controller: SPUStandardUpdaterController?
 
-        enum CodingKeys: String, CodingKey {
-            case tagName = "tag_name"
-            case htmlURL = "html_url"
+    init(bundle: Bundle = .main) {
+        guard !EmbeddedProfile.isStandaloneProfileApp,
+              bundle.object(forInfoDictionaryKey: "SUFeedURL") != nil
+        else {
+            return
         }
+        controller = SPUStandardUpdaterController(
+            startingUpdater: true,
+            updaterDelegate: nil,
+            userDriverDelegate: nil
+        )
     }
 
-    static func checkForUpdates() {
-        Task {
-            do {
-                var request = URLRequest(
-                    url: URL(string: "https://api.github.com/repos/sudhanshug16/tuidotapp/releases/latest")!
-                )
-                request.setValue("application/vnd.github+json", forHTTPHeaderField: "Accept")
-                request.setValue("TuiDotApp", forHTTPHeaderField: "User-Agent")
-                let (data, response) = try await URLSession.shared.data(for: request)
-                guard let http = response as? HTTPURLResponse,
-                      (200..<300).contains(http.statusCode)
-                else {
-                    throw URLError(.badServerResponse)
-                }
-                let release = try JSONDecoder().decode(GitHubRelease.self, from: data)
-                showResult(release)
-            } catch {
-                showAlert(
-                    title: "Could not check for updates",
-                    message: "TuiDotApp could not reach GitHub. \(error.localizedDescription)"
-                )
-            }
-        }
+    func checkForUpdates() {
+        controller?.checkForUpdates(nil)
     }
 
-    private static func showResult(_ release: GitHubRelease) {
-        let currentString = Bundle.main.object(
-            forInfoDictionaryKey: "CFBundleShortVersionString"
-        ) as? String ?? "development"
-        let current = AppVersion(currentString)
-        let latest = AppVersion(release.tagName)
-        let updateAvailable = current.map { current in
-            latest.map { $0 > current } ?? false
-        } ?? true
-
-        let alert = NSAlert()
-        alert.messageText = updateAvailable ? "A TuiDotApp update is available" : "TuiDotApp is up to date"
-        alert.informativeText = updateAvailable
-            ? "Version \(release.tagName) is available. You are running \(currentString)."
-            : "You are running the latest release (\(currentString))."
-        if updateAvailable {
-            alert.addButton(withTitle: "View Download")
-            alert.addButton(withTitle: "Later")
-            if alert.runModal() == .alertFirstButtonReturn {
-                NSWorkspace.shared.open(release.htmlURL)
-            }
-        } else {
-            alert.addButton(withTitle: "OK")
-            alert.runModal()
-        }
-    }
-
-    private static func showAlert(title: String, message: String) {
-        let alert = NSAlert()
-        alert.alertStyle = .warning
-        alert.messageText = title
-        alert.informativeText = message
-        alert.addButton(withTitle: "OK")
-        alert.runModal()
+    var canCheckForUpdates: Bool {
+        controller?.updater.canCheckForUpdates ?? false
     }
 }

@@ -1,7 +1,8 @@
 import Foundation
 
-enum ProfileAppExporterError: LocalizedError {
+enum ProfileAppExporterError: LocalizedError, Equatable {
     case invalidDestination
+    case destinationBelongsToAnotherApp
     case missingHostExecutable
     case signingFailed(String)
 
@@ -9,6 +10,8 @@ enum ProfileAppExporterError: LocalizedError {
         switch self {
         case .invalidDestination:
             "Choose a destination ending in .app."
+        case .destinationBelongsToAnotherApp:
+            "The existing app at this location was not created from this profile, so it was left untouched."
         case .missingHostExecutable:
             "The TuiDotApp host executable could not be found."
         case let .signingFailed(message):
@@ -22,7 +25,8 @@ enum ProfileAppExporter {
         profile: TuiProfile,
         to destination: URL,
         hostExecutable suppliedHost: URL? = nil,
-        resourceBundle suppliedResourceBundle: URL? = nil
+        resourceBundle suppliedResourceBundle: URL? = nil,
+        frameworksDirectory suppliedFrameworksDirectory: URL? = nil
     ) throws {
         guard destination.pathExtension.lowercased() == "app" else {
             throw ProfileAppExporterError.invalidDestination
@@ -32,6 +36,11 @@ enum ProfileAppExporter {
         }
 
         let fileManager = FileManager.default
+        if fileManager.fileExists(atPath: destination.path),
+           exportedProfileID(at: destination) != profile.id
+        {
+            throw ProfileAppExporterError.destinationBelongsToAnotherApp
+        }
         let staging = destination.deletingLastPathComponent()
             .appendingPathComponent(".tuidotapp-export-\(UUID().uuidString).app", isDirectory: true)
         defer { try? fileManager.removeItem(at: staging) }
@@ -39,6 +48,7 @@ enum ProfileAppExporter {
         let contents = staging.appendingPathComponent("Contents", isDirectory: true)
         let macOS = contents.appendingPathComponent("MacOS", isDirectory: true)
         let resources = contents.appendingPathComponent("Resources", isDirectory: true)
+        let frameworks = contents.appendingPathComponent("Frameworks", isDirectory: true)
         try fileManager.createDirectory(at: macOS, withIntermediateDirectories: true)
         try fileManager.createDirectory(at: resources, withIntermediateDirectories: true)
 
@@ -57,6 +67,17 @@ enum ProfileAppExporter {
                 at: resourceBundle,
                 to: resources.appendingPathComponent(resourceBundle.lastPathComponent)
             )
+        }
+
+        if let frameworkRoot = suppliedFrameworksDirectory ?? Bundle.main.privateFrameworksURL {
+            let sparkle = frameworkRoot.appendingPathComponent("Sparkle.framework", isDirectory: true)
+            if fileManager.fileExists(atPath: sparkle.path) {
+                try fileManager.createDirectory(at: frameworks, withIntermediateDirectories: true)
+                try fileManager.copyItem(
+                    at: sparkle,
+                    to: frameworks.appendingPathComponent("Sparkle.framework", isDirectory: true)
+                )
+            }
         }
 
         var iconFile: String?
@@ -113,6 +134,22 @@ enum ProfileAppExporter {
         let scalars = value.unicodeScalars.filter { allowed.contains($0) }
         let result = String(String.UnicodeScalarView(scalars))
         return result.isEmpty ? "TUI" : result
+    }
+
+    private static func exportedProfileID(at appURL: URL) -> UUID? {
+        let infoURL = appURL.appendingPathComponent("Contents/Info.plist")
+        guard let data = try? Data(contentsOf: infoURL),
+              let value = try? PropertyListSerialization.propertyList(
+                from: data,
+                options: [],
+                format: nil
+              ),
+              let info = value as? [String: Any],
+              let rawID = info["TuiDotAppProfileID"] as? String
+        else {
+            return nil
+        }
+        return UUID(uuidString: rawID)
     }
 
     private static func sign(app: URL) throws {

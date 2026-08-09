@@ -22,6 +22,24 @@ jobs:
         run: |
           version="${APP_VERSION#v}"
           ./scripts/package-release.sh "$version"
+      - name: Generate signed update feed
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          generate_appcast="$(find .build/artifacts -type f -path '*/Sparkle/bin/generate_appcast' -print -quit)"
+          test -x "$generate_appcast"
+          updates_dir="$(mktemp -d)"
+          cp dist/TuiDotApp-*-macOS.zip "$updates_dir/"
+          printf '%s' "$SPARKLE_PRIVATE_KEY" | "$generate_appcast" \
+            --ed-key-file - \
+            --download-url-prefix "https://github.com/sudhanshug16/tuidotapp/releases/download/$GITHUB_REF_NAME/" \
+            --link "https://github.com/sudhanshug16/tuidotapp" \
+            --maximum-versions 1 \
+            --maximum-deltas 0 \
+            -o "$updates_dir/appcast.xml" \
+            "$updates_dir"
+          cp "$updates_dir/appcast.xml" dist/appcast.xml
       - name: Publish GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
@@ -29,5 +47,6 @@ jobs:
           gh release create "$GITHUB_REF_NAME" \
             dist/TuiDotApp-*-macOS.zip \
             dist/TuiDotApp-*-macOS.zip.sha256 \
+            dist/appcast.xml \
             --generate-notes \
             --title "TuiDotApp $GITHUB_REF_NAME"

@@ -4,6 +4,7 @@ import SwiftUI
 struct TuiDotApp: App {
     @NSApplicationDelegateAdaptor(TuiDotAppDelegate.self) private var appDelegate
     @StateObject private var store = ProfileStore()
+    private let updateChecker = UpdateChecker()
 
     var body: some Scene {
         Window(Bundle.main.object(forInfoDictionaryKey: "CFBundleDisplayName") as? String ?? "TuiDotApp", id: "main") {
@@ -21,8 +22,13 @@ struct TuiDotApp: App {
             CommandGroup(after: .appInfo) {
                 if !EmbeddedProfile.isStandaloneProfileApp {
                     Button("Check for Updates…") {
-                        UpdateChecker.checkForUpdates()
+                        updateChecker.checkForUpdates()
                     }
+
+                    Button("Update All Exported Apps") {
+                        store.updateAllExportedApps()
+                    }
+                    .disabled(store.exportedAppCount == 0 || store.isUpdatingExportedApps)
                 }
             }
             CommandGroup(replacing: .newItem) {

@@ -71,10 +71,41 @@ struct ProfileAppExporterTests {
         let invalidIcon = root.appendingPathComponent("invalid.png")
         try Data("not an image".utf8).write(to: invalidIcon)
         let profile = TuiProfile(name: "Broken", command: "broken", iconPath: invalidIcon.path)
+        let contents = destination.appendingPathComponent("Contents", isDirectory: true)
+        try FileManager.default.createDirectory(at: contents, withIntermediateDirectories: true)
+        let infoData = try PropertyListSerialization.data(
+            fromPropertyList: ["TuiDotAppProfileID": profile.id.uuidString],
+            format: .xml,
+            options: 0
+        )
+        try infoData.write(to: contents.appendingPathComponent("Info.plist"))
 
         #expect(throws: IconAssetBuilderError.self) {
             try ProfileAppExporter.export(
                 profile: profile,
+                to: destination,
+                hostExecutable: host
+            )
+        }
+
+        #expect(try String(contentsOf: marker, encoding: .utf8) == "existing")
+    }
+
+    @Test("An existing app from another profile is never overwritten")
+    func foreignAppIsNotOverwritten() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let destination = root.appendingPathComponent("Existing.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let marker = destination.appendingPathComponent("keep-me")
+        try Data("existing".utf8).write(to: marker)
+        let host = root.appendingPathComponent("host")
+        try Data("#!/bin/zsh\nexit 0\n".utf8).write(to: host)
+
+        #expect(throws: ProfileAppExporterError.destinationBelongsToAnotherApp) {
+            try ProfileAppExporter.export(
+                profile: TuiProfile(name: "Replacement", command: "replacement"),
                 to: destination,
                 hostExecutable: host
             )

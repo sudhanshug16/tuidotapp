@@ -7,6 +7,8 @@ final class ProfileStore: ObservableObject {
     @Published var selectedProfileID: TuiProfile.ID?
     @Published private(set) var persistenceError: String?
     @Published private(set) var loadError: String?
+    @Published private(set) var isUpdatingExportedApps = false
+    @Published private(set) var exportedAppsUpdateReport: ExportedAppsUpdateReport?
 
     private let fileURL: URL
     private let encoder: JSONEncoder
@@ -98,6 +100,33 @@ final class ProfileStore: ObservableObject {
 
     var storageURL: URL { fileURL }
 
+    var exportedAppCount: Int {
+        ExportedAppsUpdater.existingExportedProfiles(in: profiles).count
+    }
+
+    func updateAllExportedApps() {
+        updateExportedApps(
+            ExportedAppsUpdater.existingExportedProfiles(in: profiles)
+        )
+    }
+
+    func updateOutdatedExportedAppsIfNeeded() {
+        guard !EmbeddedProfile.isStandaloneProfileApp else { return }
+        let currentVersion = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String ?? "development"
+        updateExportedApps(
+            ExportedAppsUpdater.profilesNeedingHostUpdate(
+                in: profiles,
+                currentHostVersion: currentVersion
+            )
+        )
+    }
+
+    func dismissExportedAppsUpdateReport() {
+        exportedAppsUpdateReport = nil
+    }
+
     @discardableResult
     func resetProfilesKeepingBackup() throws -> URL {
         let fileManager = FileManager.default
@@ -163,6 +192,28 @@ final class ProfileStore: ObservableObject {
             persistenceError = nil
         } catch {
             persistenceError = "Profiles could not be saved: \(error.localizedDescription)"
+        }
+    }
+
+    private func updateExportedApps(_ targets: [TuiProfile]) {
+        guard !isUpdatingExportedApps, !targets.isEmpty else { return }
+        isUpdatingExportedApps = true
+        let hostExecutable = Bundle.main.executableURL
+        let resourceBundle = AppResources.swiftPMBundleURL
+        let frameworksDirectory = Bundle.main.privateFrameworksURL
+
+        Task { [weak self] in
+            let report = await Task.detached(priority: .utility) {
+                ExportedAppsUpdater.update(
+                    profiles: targets,
+                    hostExecutable: hostExecutable,
+                    resourceBundle: resourceBundle,
+                    frameworksDirectory: frameworksDirectory
+                )
+            }.value
+            guard let self else { return }
+            isUpdatingExportedApps = false
+            exportedAppsUpdateReport = report
         }
     }
 

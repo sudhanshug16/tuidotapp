@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.6
+
+- Add signed in-app updates powered by Sparkle.
+- Automatically refresh every existing exported app after the TuiDotApp host updates.
+- Continue updating other exported apps when one replacement fails, and report each failure.
+- Add a manual **Update All Exported Apps** retry action.
+
 ## 0.1.5
 
 - Create dedicated, independently named macOS apps for local and SSH-hosted TUIs.

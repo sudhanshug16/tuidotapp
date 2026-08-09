@@ -3,13 +3,14 @@ set -euo pipefail
 
 root_dir="${0:A:h:h}"
 configuration="${CONFIGURATION:-release}"
-app_version="${APP_VERSION:-0.1.5}"
+app_version="${APP_VERSION:-0.1.6}"
 build_number="${BUILD_NUMBER:-1}"
 signing_identity="${CODE_SIGN_IDENTITY:--}"
 app_dir="$root_dir/dist/TuiDotApp.app"
 contents_dir="$app_dir/Contents"
 macos_dir="$contents_dir/MacOS"
 resources_dir="$contents_dir/Resources"
+frameworks_dir="$contents_dir/Frameworks"
 
 cd "$root_dir"
 swift build -c "$configuration"
@@ -21,8 +22,18 @@ if [[ "$app_dir" != "$root_dir/dist/TuiDotApp.app" ]]; then
     exit 1
 fi
 rm -rf "$app_dir"
-mkdir -p "$macos_dir" "$resources_dir"
+mkdir -p "$macos_dir" "$resources_dir" "$frameworks_dir"
 install -m 755 "$binary_path" "$macos_dir/TuiDotApp"
+
+sparkle_framework="$bin_dir/Sparkle.framework"
+if [[ ! -d "$sparkle_framework" ]]; then
+    echo "Sparkle.framework was not produced by SwiftPM" >&2
+    exit 1
+fi
+/usr/bin/ditto "$sparkle_framework" "$frameworks_dir/Sparkle.framework"
+if ! /usr/bin/otool -l "$macos_dir/TuiDotApp" | /usr/bin/grep -q '@executable_path/../Frameworks'; then
+    /usr/bin/install_name_tool -add_rpath '@executable_path/../Frameworks' "$macos_dir/TuiDotApp"
+fi
 
 resource_bundle="$(find "$bin_dir" -maxdepth 1 -type d -name '*TuiDotApp.bundle' -print -quit)"
 if [[ -n "$resource_bundle" ]]; then
@@ -47,6 +58,9 @@ plutil -create xml1 "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :LSMultipleInstancesProhibited bool true' "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :NSHighResolutionCapable bool true' "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :NSQuitAlwaysKeepsWindows bool false' "$contents_dir/Info.plist"
+/usr/libexec/PlistBuddy -c 'Add :SUEnableAutomaticChecks bool true' "$contents_dir/Info.plist"
+/usr/libexec/PlistBuddy -c 'Add :SUFeedURL string https://github.com/sudhanshug16/tuidotapp/releases/latest/download/appcast.xml' "$contents_dir/Info.plist"
+/usr/libexec/PlistBuddy -c 'Add :SUPublicEDKey string y2Ay/OqfR8fNOcoIk864AkHOCRaA79dVsIpYQ4IpzpA=' "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes array' "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0 dict' "$contents_dir/Info.plist"
 /usr/libexec/PlistBuddy -c 'Add :CFBundleURLTypes:0:CFBundleURLName string app.tui.desktop.launch' "$contents_dir/Info.plist"
