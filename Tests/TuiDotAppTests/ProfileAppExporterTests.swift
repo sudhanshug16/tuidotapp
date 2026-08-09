@@ -30,6 +30,7 @@ struct ProfileAppExporterTests {
         #expect(info["CFBundleDisplayName"] as? String == "Herdr")
         #expect(info["CFBundleExecutable"] as? String == "Herdr")
         #expect(info["TuiDotAppProfileID"] as? String == profile.id.uuidString)
+        #expect(info["LSMultipleInstancesProhibited"] as? Bool == true)
     }
 
     @Test("Selected profile artwork is compiled into a macOS icon")

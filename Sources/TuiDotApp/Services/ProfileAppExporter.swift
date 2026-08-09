@@ -81,6 +81,7 @@ enum ProfileAppExporter {
             "CFBundleShortVersionString": "1.0",
             "CFBundleVersion": "1",
             "LSMinimumSystemVersion": "14.0",
+            "LSMultipleInstancesProhibited": true,
             "NSHighResolutionCapable": true,
             "NSQuitAlwaysKeepsWindows": false,
             "TuiDotAppProfileID": profile.id.uuidString,
