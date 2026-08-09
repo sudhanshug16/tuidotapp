@@ -18,6 +18,13 @@ struct TuiDotApp: App {
         }
         .defaultSize(width: 1000, height: 680)
         .commands {
+            CommandGroup(after: .appInfo) {
+                if !EmbeddedProfile.isStandaloneProfileApp {
+                    Button("Check for Updates…") {
+                        UpdateChecker.checkForUpdates()
+                    }
+                }
+            }
             CommandGroup(replacing: .newItem) {
                 Button("New TUI Profile") {
                     store.addProfile()

@@ -33,6 +33,7 @@ struct ProfileStoreTests {
         )
         object.removeValue(forKey: "mapCommandToControl")
         object.removeValue(forKey: "commandToControlExclusions")
+        object.removeValue(forKey: "exportedAppPath")
         let data = try JSONSerialization.data(withJSONObject: object)
 
         let decoder = JSONDecoder()
@@ -41,5 +42,41 @@ struct ProfileStoreTests {
 
         #expect(!decoded.mapCommandToControl)
         #expect(decoded.commandToControlExclusions == "c, v")
+        #expect(decoded.exportedAppPath == nil)
+    }
+
+    @Test("An unreadable profile library is never overwritten during startup")
+    func unreadableLibraryIsPreserved() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("profiles.json")
+        let original = Data("{ definitely-not-json".utf8)
+        try original.write(to: fileURL)
+
+        let store = ProfileStore(fileURL: fileURL)
+        #expect(store.loadError != nil)
+        store.addDefaultProfileIfEmpty()
+
+        #expect(store.profiles.isEmpty)
+        #expect(try Data(contentsOf: fileURL) == original)
+    }
+
+    @Test("Resetting an unreadable library keeps a backup")
+    func resetKeepsBackup() throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let fileURL = directory.appendingPathComponent("profiles.json")
+        let original = Data("broken".utf8)
+        try original.write(to: fileURL)
+        let store = ProfileStore(fileURL: fileURL)
+
+        let backup = try store.resetProfilesKeepingBackup()
+
+        #expect(try Data(contentsOf: backup) == original)
+        #expect(store.loadError == nil)
+        #expect(store.profiles.count == 1)
+        #expect(store.profiles[0].name == "New TUI")
     }
 }

@@ -32,11 +32,11 @@ enum ProfileAppExporter {
         }
 
         let fileManager = FileManager.default
-        if fileManager.fileExists(atPath: destination.path) {
-            try fileManager.removeItem(at: destination)
-        }
+        let staging = destination.deletingLastPathComponent()
+            .appendingPathComponent(".tuidotapp-export-\(UUID().uuidString).app", isDirectory: true)
+        defer { try? fileManager.removeItem(at: staging) }
 
-        let contents = destination.appendingPathComponent("Contents", isDirectory: true)
+        let contents = staging.appendingPathComponent("Contents", isDirectory: true)
         let macOS = contents.appendingPathComponent("MacOS", isDirectory: true)
         let resources = contents.appendingPathComponent("Resources", isDirectory: true)
         try fileManager.createDirectory(at: macOS, withIntermediateDirectories: true)
@@ -70,6 +70,10 @@ enum ProfileAppExporter {
         }
 
         let safeBundleComponent = profile.id.uuidString.lowercased()
+        let hostVersion = Bundle.main.object(
+            forInfoDictionaryKey: "CFBundleShortVersionString"
+        ) as? String ?? "development"
+        let hostBuild = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         var info: [String: Any] = [
             "CFBundleDevelopmentRegion": "en",
             "CFBundleDisplayName": profile.name,
@@ -78,13 +82,14 @@ enum ProfileAppExporter {
             "CFBundleInfoDictionaryVersion": "6.0",
             "CFBundleName": profile.name,
             "CFBundlePackageType": "APPL",
-            "CFBundleShortVersionString": "1.0",
-            "CFBundleVersion": "1",
+            "CFBundleShortVersionString": hostVersion,
+            "CFBundleVersion": hostBuild,
             "LSMinimumSystemVersion": "14.0",
             "LSMultipleInstancesProhibited": true,
             "NSHighResolutionCapable": true,
             "NSQuitAlwaysKeepsWindows": false,
             "TuiDotAppProfileID": profile.id.uuidString,
+            "TuiDotAppHostVersion": hostVersion,
         ]
         if let iconFile {
             info["CFBundleIconFile"] = iconFile
@@ -99,7 +104,8 @@ enum ProfileAppExporter {
             options: .atomic
         )
 
-        try sign(app: destination)
+        try sign(app: staging)
+        try install(staging, at: destination)
     }
 
     private static func sanitizedExecutableName(_ value: String) -> String {
@@ -123,5 +129,26 @@ enum ProfileAppExporter {
                 .trimmingCharacters(in: .whitespacesAndNewlines)
             throw ProfileAppExporterError.signingFailed(message)
         }
+    }
+
+    private static func install(_ staging: URL, at destination: URL) throws {
+        let fileManager = FileManager.default
+        guard fileManager.fileExists(atPath: destination.path) else {
+            try fileManager.moveItem(at: staging, to: destination)
+            return
+        }
+
+        let backup = destination.deletingLastPathComponent()
+            .appendingPathComponent(".tuidotapp-backup-\(UUID().uuidString).app", isDirectory: true)
+        try fileManager.moveItem(at: destination, to: backup)
+        do {
+            try fileManager.moveItem(at: staging, to: destination)
+        } catch {
+            if !fileManager.fileExists(atPath: destination.path) {
+                try? fileManager.moveItem(at: backup, to: destination)
+            }
+            throw error
+        }
+        try? fileManager.removeItem(at: backup)
     }
 }

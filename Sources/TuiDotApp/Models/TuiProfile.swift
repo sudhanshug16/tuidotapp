@@ -28,6 +28,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
     var mapCommandToControl: Bool
     var commandToControlExclusions: String
     var iconPath: String?
+    var exportedAppPath: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -45,6 +46,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         mapCommandToControl: Bool = false,
         commandToControlExclusions: String = "c, v",
         iconPath: String? = nil,
+        exportedAppPath: String? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -61,6 +63,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         self.mapCommandToControl = mapCommandToControl
         self.commandToControlExclusions = commandToControlExclusions
         self.iconPath = iconPath
+        self.exportedAppPath = exportedAppPath
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
@@ -69,6 +72,25 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         name: "Herdr",
         command: "herdr"
     )
+
+    var launchValidationMessage: String? {
+        if command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Enter the command this app should run."
+        }
+        if kind == .ssh,
+           sshDestination.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        {
+            return "Enter an SSH host or ~/.ssh/config alias."
+        }
+        return nil
+    }
+
+    var exportValidationMessage: String? {
+        if name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return "Enter an app name before creating it."
+        }
+        return launchValidationMessage
+    }
 
     private enum CodingKeys: String, CodingKey {
         case id
@@ -84,6 +106,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         case mapCommandToControl
         case commandToControlExclusions
         case iconPath
+        case exportedAppPath
         case createdAt
         case updatedAt
     }
@@ -109,6 +132,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
             forKey: .commandToControlExclusions
         ) ?? "c, v"
         iconPath = try container.decodeIfPresent(String.self, forKey: .iconPath)
+        exportedAppPath = try container.decodeIfPresent(String.self, forKey: .exportedAppPath)
         createdAt = try container.decode(Date.self, forKey: .createdAt)
         updatedAt = try container.decode(Date.self, forKey: .updatedAt)
     }

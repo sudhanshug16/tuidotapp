@@ -57,6 +57,32 @@ struct ProfileAppExporterTests {
         #expect(info["CFBundleIconFile"] as? String == "AppIcon")
     }
 
+    @Test("A failed replacement leaves the existing app untouched")
+    func failedReplacementIsNonDestructive() throws {
+        let root = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        let destination = root.appendingPathComponent("Existing.app", isDirectory: true)
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let marker = destination.appendingPathComponent("keep-me")
+        try Data("existing".utf8).write(to: marker)
+        let host = root.appendingPathComponent("host")
+        try Data("#!/bin/zsh\nexit 0\n".utf8).write(to: host)
+        let invalidIcon = root.appendingPathComponent("invalid.png")
+        try Data("not an image".utf8).write(to: invalidIcon)
+        let profile = TuiProfile(name: "Broken", command: "broken", iconPath: invalidIcon.path)
+
+        #expect(throws: IconAssetBuilderError.self) {
+            try ProfileAppExporter.export(
+                profile: profile,
+                to: destination,
+                hostExecutable: host
+            )
+        }
+
+        #expect(try String(contentsOf: marker, encoding: .utf8) == "existing")
+    }
+
     private func propertyList(at url: URL) throws -> [String: Any] {
         let data = try Data(contentsOf: url)
         return try #require(

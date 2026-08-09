@@ -19,10 +19,28 @@ enum ProfileIconStore {
         if source.standardizedFileURL == destination.standardizedFileURL {
             return destination
         }
-        if fileManager.fileExists(atPath: destination.path) {
-            try fileManager.removeItem(at: destination)
+        let staging = directory.appendingPathComponent(
+            ".\(profileID.uuidString.lowercased())-\(UUID().uuidString).tmp"
+        )
+        defer { try? fileManager.removeItem(at: staging) }
+        try fileManager.copyItem(at: source, to: staging)
+
+        guard fileManager.fileExists(atPath: destination.path) else {
+            try fileManager.moveItem(at: staging, to: destination)
+            return destination
         }
-        try fileManager.copyItem(at: source, to: destination)
+
+        let backup = directory.appendingPathComponent(
+            ".\(profileID.uuidString.lowercased())-\(UUID().uuidString).backup"
+        )
+        try fileManager.moveItem(at: destination, to: backup)
+        do {
+            try fileManager.moveItem(at: staging, to: destination)
+        } catch {
+            try? fileManager.moveItem(at: backup, to: destination)
+            throw error
+        }
+        try? fileManager.removeItem(at: backup)
         return destination
     }
 

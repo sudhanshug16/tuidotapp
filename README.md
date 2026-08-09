@@ -4,6 +4,20 @@ Turn an installed terminal application into a first-class macOS window without c
 
 TuiDotApp launches your real login shell inside an embedded Ghostty terminal and injects the configured command as startup input. Homebrew, mise, asdf, shell aliases, SSH agents, and future binary upgrades keep working because the command is resolved when the window opens.
 
+## Screenshots
+
+### A TUI as its own Mac app
+
+![Lazygit running in a dedicated TuiDotApp window](screenshots/standalone-terminal.png)
+
+### Configure and brand each app
+
+![TuiDotApp profile editor configured for Lazygit](screenshots/profile-editor.png)
+
+### Search 485 bundled themes
+
+![Searchable light and dark theme picker](screenshots/theme-picker.png)
+
 ## Current capabilities
 
 - Native macOS profile manager and dedicated terminal windows
@@ -17,6 +31,17 @@ TuiDotApp launches your real login shell inside an embedded Ghostty terminal and
 - `tuidotapp://launch/<profile-uuid>` deep links
 - Exportable standalone `.app` hosts with independent process, app identity, and icon
 - Per-profile PNG, JPEG, or ICNS artwork compiled into a native macOS icon
+- Searchable theme selection, visible input validation, and protected profile deletion
+- Built-in release checks through **TuiDotApp → Check for Updates…**
+
+## Install
+
+1. Download `TuiDotApp-1.0.0-macOS.zip` and its checksum from the latest GitHub release.
+2. Verify it with `shasum -a 256 -c TuiDotApp-1.0.0-macOS.zip.sha256`.
+3. Unzip it and move `TuiDotApp.app` to `/Applications`.
+4. Because public builds are currently ad-hoc signed, first-launch it with Finder's **Open** action.
+
+Use **TuiDotApp → Check for Updates…** to check GitHub for a newer host. After replacing TuiDotApp itself, open each profile and click **Update App** to refresh the standalone app at its remembered location. Installed TUI commands continue to update through their own package manager; TuiDotApp never copies them.
 
 ## Build
 
@@ -37,12 +62,14 @@ open dist/TuiDotApp.app
 Create the same versioned archive used by GitHub Releases:
 
 ```bash
-./scripts/package-release.sh 0.1.1
+./scripts/package-release.sh 1.0.0
 ```
 
 Tagged versions (`v0.1.0`, for example) are tested and published automatically as a macOS app archive plus SHA-256 checksum. Release archives are ad-hoc signed until a Developer ID certificate is configured, so macOS may require the first launch through Finder's **Open** action.
 
-After opening TuiDotApp once, use **Export App** on a profile to create a signed standalone app for Applications, Spotlight, and the Dock. Each exported app has its own bundle identity, process, menu-bar name, and optional custom icon. It embeds the reusable TuiDotApp/Ghostty host and the profile UUID, never the configured command or TUI executable, so upgrading the externally installed command takes effect on the next launch.
+After opening TuiDotApp once, use **Create App…** on a profile to create a signed standalone app for Applications, Spotlight, and the Dock. Each exported app has its own bundle identity, process, menu-bar name, and optional custom icon. It embeds the reusable TuiDotApp/Ghostty host and the profile UUID, never the configured command or TUI executable, so upgrading the externally installed command takes effect on the next launch.
+
+Profile settings remain in `~/Library/Application Support/TuiDotApp/profiles.json`, so an exported app is standalone on the Mac that created it rather than portable to another Mac. Profile edits apply on the next launch. TuiDotApp remembers the created app's location: after updating TuiDotApp itself, click **Update App** to refresh its embedded terminal host. The old app remains intact if replacement fails.
 
 Choose **Choose Image…** in the profile editor before export to use PNG, JPEG, or ICNS artwork. TuiDotApp stores a durable copy under Application Support and generates all required macOS icon sizes during export.
 
