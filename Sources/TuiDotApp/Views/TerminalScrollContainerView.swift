@@ -9,6 +9,24 @@ import GhosttyTerminal
 /// screen fallback (arrow-key history) instead of TUI mouse reporting.
 @MainActor
 final class TuiTerminalView: TerminalView {
+    override func performKeyEquivalent(with event: NSEvent) -> Bool {
+        let shortcutModifiers = event.modifierFlags.intersection([
+            .command,
+            .control,
+            .option,
+            .shift,
+        ])
+        if event.type == .keyDown,
+           shortcutModifiers == .command,
+           event.charactersIgnoringModifiers?.lowercased() == "q"
+        {
+            NSApp.terminate(nil)
+            return true
+        }
+
+        return super.performKeyEquivalent(with: event)
+    }
+
     override func mouseEntered(with event: NSEvent) {
         super.mouseEntered(with: event)
         super.mouseMoved(with: event)
