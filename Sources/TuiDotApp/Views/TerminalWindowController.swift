@@ -41,7 +41,7 @@ final class TerminalWindowController: NSWindowController, NSWindowDelegate {
 }
 
 @MainActor
-private final class TerminalHostViewController: NSViewController {
+final class TerminalHostViewController: NSViewController {
     private let profile: TuiProfile
     private let launchInput: LaunchInput
     private let terminalView = TerminalView(frame: .zero)

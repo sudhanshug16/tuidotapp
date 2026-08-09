@@ -1,5 +1,6 @@
 import AppKit
 import SwiftUI
+import UniformTypeIdentifiers
 
 struct ProfileEditorView: View {
     @EnvironmentObject private var store: ProfileStore
@@ -36,6 +37,43 @@ struct ProfileEditorView: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+            }
+
+            Section("Standalone app icon") {
+                HStack(spacing: 16) {
+                    Group {
+                        if let icon = selectedIcon {
+                            Image(nsImage: icon)
+                                .resizable()
+                                .scaledToFit()
+                        } else {
+                            Image(systemName: "terminal.fill")
+                                .resizable()
+                                .scaledToFit()
+                                .padding(12)
+                                .foregroundStyle(.secondary)
+                        }
+                    }
+                    .frame(width: 64, height: 64)
+                    .clipShape(RoundedRectangle(cornerRadius: 14))
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Text(draft.iconPath.map { URL(fileURLWithPath: $0).lastPathComponent } ?? "No custom icon")
+                            .lineLimit(1)
+                            .foregroundStyle(.secondary)
+                        HStack {
+                            Button("Choose Image…") { chooseIcon() }
+                            if draft.iconPath != nil {
+                                Button("Clear", role: .destructive) {
+                                    draft.iconPath = nil
+                                }
+                            }
+                        }
+                    }
+                }
+                Text("PNG, JPEG, and ICNS images are compiled into the exported app. The TUI executable is still resolved externally at launch.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Theme") {
@@ -132,9 +170,31 @@ struct ProfileEditorView: View {
 
         do {
             try ProfileAppExporter.export(profile: draft, to: url)
-            exportMessage = "Created \(url.lastPathComponent). It contains only a launch link; the TUI binary remains externally installed and updateable."
+            exportMessage = "Created \(url.lastPathComponent) as an independent Mac app. It contains the Ghostty host and profile ID, never the TUI binary."
         } catch {
             exportMessage = error.localizedDescription
+        }
+    }
+
+    private var selectedIcon: NSImage? {
+        guard let iconPath = draft.iconPath else { return nil }
+        return NSImage(contentsOfFile: iconPath)
+    }
+
+    private func chooseIcon() {
+        let panel = NSOpenPanel()
+        panel.title = "Choose App Icon"
+        panel.allowedContentTypes = [.png, .jpeg, UTType(filenameExtension: "icns")!]
+        panel.allowsMultipleSelection = false
+        panel.canChooseDirectories = false
+        guard panel.runModal() == .OK, let url = panel.url else { return }
+        do {
+            draft.iconPath = try ProfileIconStore.importIcon(
+                from: url,
+                profileID: draft.id
+            ).path
+        } catch {
+            launchError = "The icon could not be saved: \(error.localizedDescription)"
         }
     }
 

@@ -42,4 +42,8 @@ final class TuiDotAppDelegate: NSObject, NSApplicationDelegate {
             }
         }
     }
+
+    func applicationShouldTerminateAfterLastWindowClosed(_: NSApplication) -> Bool {
+        EmbeddedProfile.isStandaloneProfileApp
+    }
 }

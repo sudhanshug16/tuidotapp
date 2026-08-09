@@ -49,7 +49,11 @@ final class ProfileStore: ObservableObject {
 
     func addHerdrExampleIfEmpty() {
         guard profiles.isEmpty else { return }
-        profiles = [.herdrExample]
+        var profile = TuiProfile.herdrExample
+        profile.iconPath = ProfileIconStore.installBundledHerdrIcon(
+            profileID: profile.id
+        )?.path
+        profiles = [profile]
         selectedProfileID = profiles[0].id
         save()
     }
@@ -73,8 +77,30 @@ final class ProfileStore: ObservableObject {
         do {
             let data = try Data(contentsOf: fileURL)
             profiles = try decoder.decode([TuiProfile].self, from: data)
+            var migrated = false
+            for index in profiles.indices where
+                profiles[index].name == "Herdr" && profiles[index].command == "herdr"
+            {
+                if profiles[index].iconPath == nil ||
+                    profiles[index].iconPath?.contains("tuidotapp_TuiDotApp.bundle/HerdrIcon.png") == true
+                {
+                    profiles[index].iconPath = ProfileIconStore.installBundledHerdrIcon(
+                        profileID: profiles[index].id
+                    )?.path
+                    migrated = true
+                }
+                let legacyTitlebar = "macos-titlebar-style = tabs"
+                if profiles[index].ghosttyConfig.contains(legacyTitlebar) {
+                    profiles[index].ghosttyConfig = profiles[index].ghosttyConfig
+                        .components(separatedBy: .newlines)
+                        .filter { $0.trimmingCharacters(in: .whitespaces) != legacyTitlebar }
+                        .joined(separator: "\n")
+                    migrated = true
+                }
+            }
             selectedProfileID = profiles.first?.id
             persistenceError = nil
+            if migrated { save() }
         } catch let error as CocoaError where error.code == .fileReadNoSuchFile {
             profiles = []
         } catch {

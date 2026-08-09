@@ -25,6 +25,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
     var lightThemeName: String
     var darkThemeName: String
     var ghosttyConfig: String
+    var iconPath: String?
     var createdAt: Date
     var updatedAt: Date
 
@@ -39,6 +40,7 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         lightThemeName: String = "Catppuccin Latte",
         darkThemeName: String = "Catppuccin Mocha",
         ghosttyConfig: String = "font-size = 14\nwindow-padding-x = 8\nwindow-padding-y = 8",
+        iconPath: String? = nil,
         createdAt: Date = .now,
         updatedAt: Date = .now
     ) {
@@ -52,18 +54,13 @@ struct TuiProfile: Codable, Identifiable, Hashable, Sendable {
         self.lightThemeName = lightThemeName
         self.darkThemeName = darkThemeName
         self.ghosttyConfig = ghosttyConfig
+        self.iconPath = iconPath
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     static let herdrExample = TuiProfile(
         name: "Herdr",
-        command: "herdr",
-        ghosttyConfig: """
-        font-size = 14
-        window-padding-x = 8
-        window-padding-y = 8
-        macos-titlebar-style = tabs
-        """
+        command: "herdr"
     )
 }
