@@ -1,0 +1,21 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test-and-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Test
+        run: swift test -c release
+      - name: Build app bundle
+        run: ./scripts/build-app.sh
+      - name: Verify bundle signature
+        run: codesign --verify --deep --strict --verbose=2 dist/TuiDotApp.app
