@@ -6,12 +6,12 @@ struct AppVersionTests {
     @Test("Release tags compare numerically")
     func numericComparison() throws {
         let old = try #require(AppVersion("v0.1.4"))
-        let current = try #require(AppVersion("1.0.0"))
-        let newer = try #require(AppVersion("1.0.1"))
+        let current = try #require(AppVersion("0.1.5"))
+        let newer = try #require(AppVersion("0.1.6"))
 
         #expect(old < current)
         #expect(current < newer)
-        #expect(AppVersion("1.0") == current)
+        #expect(AppVersion("0.1.5") == current)
     }
 
     @Test("Invalid versions are rejected")

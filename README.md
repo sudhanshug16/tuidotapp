@@ -36,8 +36,8 @@ TuiDotApp launches your real login shell inside an embedded Ghostty terminal and
 
 ## Install
 
-1. Download `TuiDotApp-1.0.0-macOS.zip` and its checksum from the latest GitHub release.
-2. Verify it with `shasum -a 256 -c TuiDotApp-1.0.0-macOS.zip.sha256`.
+1. Download `TuiDotApp-0.1.5-macOS.zip` and its checksum from the latest GitHub release.
+2. Verify it with `shasum -a 256 -c TuiDotApp-0.1.5-macOS.zip.sha256`.
 3. Unzip it and move `TuiDotApp.app` to `/Applications`.
 4. Because public builds are currently ad-hoc signed, first-launch it with Finder's **Open** action.
 
@@ -62,7 +62,7 @@ open dist/TuiDotApp.app
 Create the same versioned archive used by GitHub Releases:
 
 ```bash
-./scripts/package-release.sh 1.0.0
+./scripts/package-release.sh 0.1.5
 ```
 
 Tagged versions (`v0.1.0`, for example) are tested and published automatically as a macOS app archive plus SHA-256 checksum. Release archives are ad-hoc signed until a Developer ID certificate is configured, so macOS may require the first launch through Finder's **Open** action.

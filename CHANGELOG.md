@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0
+## 0.1.5
 
 - Create dedicated, independently named macOS apps for local and SSH-hosted TUIs.
 - Render through Ghostty with mouse reporting, selection, clipboard, scrollback, and native scrollbars.
