@@ -33,7 +33,12 @@ enum LaunchCommandBuilder {
             // xterm-256color is widely installed on remote hosts. Advertising
             // xterm-ghostty without first installing its terminfo entry can
             // leave remote TUIs partially rendered with no obvious error.
-            return "exec env TERM=xterm-256color /usr/bin/ssh -tt\(extraSegment) -- \(shellQuote(destination)) \(shellQuote(command))\n"
+            // SSH runs a supplied command through a non-login shell, whose
+            // PATH often omits user-installed tools such as ~/.local/bin.
+            // Re-enter the remote user's configured shell as a login shell so
+            // the same command that works interactively also works here.
+            let remoteCommand = "exec \"$SHELL\" -lc \(shellQuote(command))"
+            return "exec env TERM=xterm-256color /usr/bin/ssh -tt\(extraSegment) -- \(shellQuote(destination)) \(shellQuote(remoteCommand))\n"
         }
     }
 

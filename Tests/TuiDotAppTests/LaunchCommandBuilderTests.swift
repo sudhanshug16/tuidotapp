@@ -20,7 +20,7 @@ struct LaunchCommandBuilderTests {
         )
         #expect(
             try LaunchCommandBuilder.startupInput(for: profile)
-                == "exec env TERM=xterm-256color /usr/bin/ssh -tt -J bastion -- 'work-box' 'cd ~/work && herdr'\n"
+                == "exec env TERM=xterm-256color /usr/bin/ssh -tt -J bastion -- 'work-box' 'exec \"$SHELL\" -lc '\\''cd ~/work && herdr'\\'''\n"
         )
     }
 
