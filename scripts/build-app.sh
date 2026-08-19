@@ -3,7 +3,7 @@ set -euo pipefail
 
 root_dir="${0:A:h:h}"
 configuration="${CONFIGURATION:-release}"
-app_version="${APP_VERSION:-0.1.6}"
+app_version="${APP_VERSION:-0.1.7}"
 build_number="${BUILD_NUMBER:-1}"
 signing_identity="${CODE_SIGN_IDENTITY:--}"
 app_dir="$root_dir/dist/TuiDotApp.app"

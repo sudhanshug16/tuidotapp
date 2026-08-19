@@ -2,7 +2,7 @@
 set -euo pipefail
 
 root_dir="${0:A:h:h}"
-version="${1:-${APP_VERSION:-0.1.6}}"
+version="${1:-${APP_VERSION:-0.1.7}}"
 archive_name="TuiDotApp-${version}-macOS.zip"
 
 APP_VERSION="$version" "$root_dir/scripts/build-app.sh"

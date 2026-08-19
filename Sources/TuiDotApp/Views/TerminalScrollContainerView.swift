@@ -12,6 +12,39 @@ final class TuiTerminalView: TerminalView {
     var mapCommandToControl = false
     var commandToControlExcludedKeys: Set<String> = ["c", "v"]
 
+    override func insertText(_ string: Any, replacementRange: NSRange) {
+        // Accessibility tools and macOS Services can insert text without a
+        // backing NSEvent. Ghostty's normal IME path intentionally ignores
+        // those calls, so forward only eventless committed text directly to
+        // the pty and leave keyboard/IME composition on the native path.
+        guard NSApp.currentEvent == nil else {
+            super.insertText(string, replacementRange: replacementRange)
+            return
+        }
+        guard let text = Self.committedText(from: string) else { return }
+        sendText(text)
+    }
+
+    override func accessibilityRole() -> NSAccessibility.Role? {
+        .textArea
+    }
+
+    override func isAccessibilityFocused() -> Bool {
+        window?.firstResponder === self
+    }
+
+    override func setAccessibilityFocused(_ accessibilityFocused: Bool) {
+        guard accessibilityFocused else { return }
+        window?.makeFirstResponder(self)
+    }
+
+    static func committedText(from value: Any) -> String? {
+        if let attributed = value as? NSAttributedString {
+            return attributed.string
+        }
+        return value as? String
+    }
+
     override func performKeyEquivalent(with event: NSEvent) -> Bool {
         let shortcutModifiers = event.modifierFlags.intersection([
             .command,

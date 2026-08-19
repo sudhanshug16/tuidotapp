@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.7
+
+- Deliver terminal-requested notifications through macOS Notification Center.
+- Expose terminal surfaces as focused text areas and accept synthetic text from dictation and Accessibility tools.
+- Follow terminal-provided window titles and open activated terminal links with the system handler.
+
 ## 0.1.6
 
 - Add signed in-app updates powered by Sparkle.

@@ -35,6 +35,10 @@ enum ProfileDeepLinkHandler {
 }
 
 final class TuiDotAppDelegate: NSObject, NSApplicationDelegate {
+    func applicationDidFinishLaunching(_: Notification) {
+        DesktopNotificationService.shared.configure()
+    }
+
     func application(_ application: NSApplication, open urls: [URL]) {
         Task { @MainActor in
             for url in urls {

@@ -116,8 +116,11 @@ final class TerminalHostViewController: NSViewController {
 
 extension TerminalHostViewController:
     TerminalSurfaceCloseDelegate,
+    TerminalSurfaceDesktopNotificationDelegate,
     TerminalSurfaceGridResizeDelegate,
-    TerminalSurfaceScrollbarDelegate
+    TerminalSurfaceOpenURLDelegate,
+    TerminalSurfaceScrollbarDelegate,
+    TerminalSurfaceTitleDelegate
 {
     func terminalDidResize(_ size: TerminalGridMetrics) {
         terminalContainer.updateGrid(size)
@@ -128,6 +131,24 @@ extension TerminalHostViewController:
 
     func terminalDidUpdateScrollbar(_ scrollbar: TerminalScrollbar) {
         terminalContainer.updateScrollbar(scrollbar)
+    }
+
+    func terminalDidRequestDesktopNotification(title: String, body: String) {
+        DesktopNotificationService.shared.deliver(
+            title: title,
+            body: body,
+            fallbackTitle: profile.name
+        )
+    }
+
+    func terminalDidRequestOpenURL(_ value: String, kind _: TerminalOpenURLKind) {
+        guard let url = URL(string: value), url.scheme != nil else { return }
+        NSWorkspace.shared.open(url)
+    }
+
+    func terminalDidChangeTitle(_ title: String) {
+        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
+        view.window?.title = trimmed.isEmpty ? profile.name : trimmed
     }
 
     func terminalDidClose(processAlive _: Bool) {

@@ -23,6 +23,9 @@ TuiDotApp launches your real login shell inside an embedded Ghostty terminal and
 - Native macOS profile manager and dedicated terminal windows
 - Ghostty rendering, mouse reporting, selection, clipboard, fonts, and configuration
 - Native macOS scrollbars with interactive scrollback navigation
+- Native macOS notifications requested by terminal apps through OSC 9/777
+- Accessibility-compatible text input for dictation and speech-to-text apps
+- Terminal-driven window titles and Command-clickable links
 - 485 bundled light/dark themes with separate system-appearance choices
 - Unfiltered Ghostty config passthrough for options not represented in the UI
 - Local commands resolved by the user's login shell
@@ -63,7 +66,7 @@ open dist/TuiDotApp.app
 Create the same versioned archive used by GitHub Releases:
 
 ```bash
-./scripts/package-release.sh 0.1.6
+./scripts/package-release.sh 0.1.7
 ```
 
 Tagged versions (`v0.1.0`, for example) are tested and published automatically as a macOS app archive plus SHA-256 checksum. Release archives are ad-hoc signed until a Developer ID certificate is configured, so macOS may require the first launch through Finder's **Open** action.
